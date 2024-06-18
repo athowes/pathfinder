@@ -1,0 +1,32 @@
+---
+title: "Pathfinder"
+subtitle: "STF Lab Meeting"
+author: Adam Howes
+format: revealjs
+---
+
+## Why are we interested in this?
+
+* We have probabilistic models that we would like to perform Bayesian inference for
+* We routinely fit 100s of models, and require reliable methods
+* For complex models or large data, MCMC and HMC can be impractical
+* Alternatively, MCMC and HMC require good initialisation values (burn-in)
+
+## Features of pathfinder
+
+* Claimed "state-of-the-art" method for black box VI and MCMC burn-in
+* Fast (-er than ADVI and HMC) and (almost embarrasingly) parallelisable
+* Robust to "varying curvature, minor multimodality, avoiding variance and non-convergence of SGD"
+* A little more accurate (than?)
+
+## Implementation
+
+* Implemented in Stan
+* Stan also has Laplace, ADVI, HMC
+* Can operate as a easy replacement for HMC in `EpiNow2`, `epinowcast`, and `epidist`
+
+## Comparison for `epidist`
+
+* I've been working on a vignette for `epidist` demonstrating Laplace, ADVI, pathfinder, and HMC
+
+## References
