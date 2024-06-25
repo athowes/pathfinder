@@ -3,30 +3,48 @@ title: "Pathfinder"
 subtitle: "STF Lab Meeting"
 author: Adam Howes
 format: revealjs
+bibliography: citations.bib
 ---
 
-## Why are we interested in this?
+## What is Pathfinder
+
+* A black box variational inference method [@zhang2022pathfinder]
+  * Variational inference: approximates the posterior within a variational family of distributions
+  * Black box: only uses the log-posterior
+
+## Why are we interested in Pathfinder?
 
 * We have probabilistic models that we would like to perform Bayesian inference for
-* We routinely fit 100s of models, and require reliable methods
+  * Routinely fit 100s of models, and require reliable methods
 * For complex models or large data, MCMC and HMC can be impractical
-* Alternatively, MCMC and HMC require good initialisation values (burn-in)
+  * Even if we are to use MCMC and HMC, they require good initialisation values (burn-in)
+
+## Example applications
+
+* As to why I am interested in this
+  * Estimating the effective reproductive number $R_t$ across US states each week
+  * Estimating epidemiological delays with line list data
+* Others are using Pathfinder for e.g. forecasting
 
 ## Features of pathfinder
 
-* Claimed "state-of-the-art" method for black box VI and MCMC burn-in
-* Fast (-er than ADVI and HMC) and (almost embarrasingly) parallelisable
+* Claimed "state-of-the-art" method for
+1. Black box VI
+2. MCMC burn-in (I assume this means initialisation)
+* Fast (-er than ADVI and HMC) and (almost embarrassingly) parallelisable
 * Robust to "varying curvature, minor multimodality, avoiding variance and non-convergence of SGD"
-* A little more accurate (than?)
+* A little more accurate (than? I'd guess ADVI)
 
 ## Implementation
 
-* Implemented in Stan
-* Stan also has Laplace, ADVI, HMC
-* Can operate as a easy replacement for HMC in `EpiNow2`, `epinowcast`, and `epidist`
+* Implemented in Stan [@carpenter2017stan]
+  * Stan also has Laplace, ADVI, HMC
+* So can operate to generate intial values for (or stand in for) HMC in existing packages which depend on Stan
+  * `EpiNow2`, `epinowcast`, `epidist`, ...
+* Also implemented in other packages? Julia? Python?
 
 ## Comparison for `epidist`
 
-* I've been working on a vignette for `epidist` demonstrating Laplace, ADVI, pathfinder, and HMC
+* I've been working on a vignette for `epidist` demonstrating Laplace, ADVI, Pathfinder, and HMC
 
-## References
+## Bibliography
