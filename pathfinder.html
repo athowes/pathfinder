@@ -375,7 +375,7 @@ Adam Howes
 <ul>
 <li>Routinely fit 100s of models, and require reliable methods</li>
 </ul></li>
-<li>For complex models or large data, MCMC and HMC can be impractical
+<li>For complex models or large data, MCMC and HMC can be impractical (not scalable)
 <ul>
 <li>Even if we are to use MCMC and HMC, they require good initialisation values (burn-in)</li>
 </ul></li>
@@ -414,11 +414,73 @@ Adam Howes
 <ul>
 <li>Stan also has Laplace, ADVI, HMC</li>
 </ul></li>
-<li>So can operate to generate intial values for (or stand in for) HMC in existing packages which depend on Stan
+<li>So can operate to generate initial values for (or stand in for) HMC in existing packages which depend on Stan
 <ul>
 <li><code>EpiNow2</code>, <code>epinowcast</code>, <code>epidist</code>, …</li>
 </ul></li>
 <li>Also implemented in other packages? Julia? Python?</li>
+</ul>
+</section>
+<section id="stan-set-up" class="slide level2">
+<h2>Stan set-up</h2>
+<ul>
+<li>Defined unnormalised log posterior <span class="math inline">\(\log p(\theta \, | \, y)\)</span></li>
+<li>Continuous parameters <span class="math inline">\(\theta\)</span> transformed to <span class="math inline">\(\mathbb{R}^N\)</span></li>
+<li>Use automatic differentiation to compute <span class="math inline">\(\nabla_\theta \log p(\theta \, | \, y)\)</span>
+<ul>
+<li>Stan’s AD is optimised for CPUs rather than GPUs</li>
+</ul></li>
+</ul>
+</section>
+<section id="black-box-vi" class="slide level2">
+<h2>Black box VI</h2>
+<ul>
+<li><p>VI is faster than MCMC because it swaps sampling for optimisation</p></li>
+<li><p>Choose approximating family e.g.&nbsp;<span class="math inline">\(\mathcal{N}(\theta \, | \, \mu, \Sigma)\)</span></p></li>
+<li><p>Find parameters which minimise divergence to posterior <span class="math display">\[
+\mu^\star, \Sigma^\star = \arg \min_{\mu, \Sigma} \text{KL}[\mathcal{N}(\theta \, | \, \mu, \Sigma) || p(\theta \, | \, y)]
+\]</span></p></li>
+<li><p>Different types of assumptions about <span class="math inline">\(\Sigma\)</span></p>
+<ul>
+<li>Mean-field: <span class="math inline">\(\Sigma = \text{diag}(\sigma_1, \ldots, \sigma_N)\)</span> i.e.&nbsp;no correlation structure</li>
+</ul></li>
+</ul>
+</section>
+<section id="how-to-make-this-bayesian" class="slide level2">
+<h2>How to make this “Bayesian”?</h2>
+<ul>
+<li>Generate draws from <span class="math inline">\(\theta^{(m)} \sim \mathcal{N}(\theta \, | \, \mu, \Sigma)\)</span> for <span class="math inline">\(m = 1, \ldots, M\)</span></li>
+<li>Use the draws to compute any relevant quantities (after transforming them back to constrained scale)
+<ul>
+<li>Also some mention of doing importance sampling here as a detail</li>
+</ul></li>
+<li>Key thing is that for “machine learners” VI is typically used more to generate <span class="math inline">\(\hat \theta\)</span></li>
+</ul>
+</section>
+<section id="section" class="slide level2">
+<h2></h2>
+<p>Good point about initialising MCMC: Prefer to be concentrated within the target rather than outside support. HMC runs slower far outside the support. “Stiff”. Hence: goal of pathfinder is to avoid this problem. Brings up: to what extent do goals of “inference” differ from goals of “initialise”. Seems to be a suprise if they are exactly the same.</p>
+</section>
+<section id="pathfinder-motivation" class="slide level2">
+<h2>Pathfinder motivation</h2>
+<ul>
+<li>Samples are usually far from the MAP (more so in high dimensions)</li>
+<li>Want to take a draw which has around expected log density</li>
+</ul>
+
+<img data-src="pathfinder_files/figure-revealjs/unnamed-chunk-1-1.png" width="960" class="r-stretch"></section>
+<section id="section-1" class="slide level2">
+<h2></h2>
+</section>
+<section id="when-to-use-approximate-methods" class="slide level2">
+<h2>When to use approximate methods?</h2>
+
+<img data-src="converge.png" class="r-stretch quarto-figure-center"><p class="caption">What do we think?</p></section>
+<section id="section-2" class="slide level2">
+<h2></h2>
+<ul>
+<li>Comments about this ^</li>
+<li>Correlated posteriors sample slowly. But perhaps likely to be poorly estimated by VI</li>
 </ul>
 </section>
 <section id="comparison-for-epidist" class="slide level2">
@@ -653,6 +715,44 @@ Zhang, Lu, Bob Carpenter, Andrew Gelman, and Aki Vehtari. 2022. <span>“Pathfin
         ]
       });
     </script>
+    
+    <script>
+      // htmlwidgets need to know to resize themselves when slides are shown/hidden.
+      // Fire the "slideenter" event (handled by htmlwidgets.js) when the current
+      // slide changes (different for each slide format).
+      (function () {
+        // dispatch for htmlwidgets
+        function fireSlideEnter() {
+          const event = window.document.createEvent("Event");
+          event.initEvent("slideenter", true, true);
+          window.document.dispatchEvent(event);
+        }
+
+        function fireSlideChanged(previousSlide, currentSlide) {
+          fireSlideEnter();
+
+          // dispatch for shiny
+          if (window.jQuery) {
+            if (previousSlide) {
+              window.jQuery(previousSlide).trigger("hidden");
+            }
+            if (currentSlide) {
+              window.jQuery(currentSlide).trigger("shown");
+            }
+          }
+        }
+
+        // hookup for slidy
+        if (window.w3c_slidy) {
+          window.w3c_slidy.add_observer(function (slide_num) {
+            // slide_num starts at position 1
+            fireSlideChanged(null, w3c_slidy.slides[slide_num - 1]);
+          });
+        }
+
+      })();
+    </script>
+
     <script id="quarto-html-after-body" type="application/javascript">
     window.document.addEventListener("DOMContentLoaded", function (event) {
       const toggleBodyColorMode = (bsSheetEl) => {

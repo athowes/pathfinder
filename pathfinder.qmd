@@ -16,7 +16,7 @@ bibliography: citations.bib
 
 * We have probabilistic models that we would like to perform Bayesian inference for
   * Routinely fit 100s of models, and require reliable methods
-* For complex models or large data, MCMC and HMC can be impractical
+* For complex models or large data, MCMC and HMC can be impractical (not scalable)
   * Even if we are to use MCMC and HMC, they require good initialisation values (burn-in)
 
 ## Example applications
@@ -39,9 +39,78 @@ bibliography: citations.bib
 
 * Implemented in Stan [@carpenter2017stan]
   * Stan also has Laplace, ADVI, HMC
-* So can operate to generate intial values for (or stand in for) HMC in existing packages which depend on Stan
+* So can operate to generate initial values for (or stand in for) HMC in existing packages which depend on Stan
   * `EpiNow2`, `epinowcast`, `epidist`, ...
 * Also implemented in other packages? Julia? Python?
+
+## Stan set-up
+
+* Defined unnormalised log posterior $\log p(\theta \, | \, y)$
+* Continuous parameters $\theta$ transformed to $\mathbb{R}^N$
+* Use automatic differentiation to compute $\nabla_\theta \log p(\theta \, | \, y)$
+  * Stan's AD is optimised for CPUs rather than GPUs
+
+## Black box VI
+
+* VI is faster than MCMC because it swaps sampling for optimisation
+* Choose approximating family e.g. $\mathcal{N}(\theta \, | \, \mu, \Sigma)$
+* Find parameters which minimise divergence to posterior
+$$
+\mu^\star, \Sigma^\star = \arg \min_{\mu, \Sigma} \text{KL}[\mathcal{N}(\theta \, | \, \mu, \Sigma) || p(\theta \, | \, y)]
+$$
+
+* Different types of assumptions about $\Sigma$
+  * Mean-field: $\Sigma = \text{diag}(\sigma_1, \ldots, \sigma_N)$ i.e. no correlation structure
+
+## How to make this "Bayesian"?
+
+* Generate draws from $\theta^{(m)} \sim \mathcal{N}(\theta \, | \, \mu, \Sigma)$ for $m = 1, \ldots, M$
+* Use the draws to compute any relevant quantities (after transforming them back to constrained scale)
+  * Also some mention of doing importance sampling here as a detail
+* Key thing is that for "machine learners" VI is typically used more to generate $\hat \theta$
+
+##
+
+Good point about initialising MCMC: 
+Prefer to be concentrated within the target rather than outside support.
+HMC runs slower far outside the support.
+"Stiff".
+Hence: goal of pathfinder is to avoid this problem.
+Brings up: to what extent do goals of "inference" differ from goals of "initialise".
+Seems to be a suprise if they are exactly the same.
+
+## Pathfinder motivation
+
+* Samples are usually far from the MAP (more so in high dimensions)
+* Want to take a draw which has around expected log density
+
+```{r}
+library(ggplot2)
+library(purrr)
+
+df <- purrr::map_df(2^{0:8}, function(x) {
+  samps <- sqrt(rchisq(n = 1000, df = x))
+  quans <- quantile(samps, c(0.025, 0.5, 0.975))
+  return(c("dof" = x, quans))
+})
+
+ggplot(df, aes(x = dof, y = `50%`)) +
+  geom_ribbon(aes(ymin = `2.5%`, ymax = `97.5%`), fill = "grey") +
+  geom_line() +
+  theme_minimal() +
+  labs(x = "Dimension", y = "Euclidean distance from origin of sample from Gaussian")
+```
+
+##
+
+## When to use approximate methods?
+
+![What do we think?](converge.png)
+
+##
+
+* Comments about this ^
+* Correlated posteriors sample slowly. But perhaps likely to be poorly estimated by VI
 
 ## Comparison for `epidist`
 
