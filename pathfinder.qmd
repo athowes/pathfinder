@@ -6,6 +6,12 @@ format: revealjs
 bibliography: citations.bib
 ---
 
+```{r}
+library(ggplot2)
+library(purrr)
+pal <- c("#56B4E9", "#009E73", "#E69F00")
+```
+
 ## What is Pathfinder
 
 * A black box variational inference method [@zhang2022pathfinder]
@@ -37,11 +43,17 @@ bibliography: citations.bib
 
 ## Implementation
 
-* Implemented in Stan [@carpenter2017stan]
-  * Stan also has Laplace, ADVI, HMC
-* So can operate to generate initial values for (or stand in for) HMC in existing packages which depend on Stan
-  * `EpiNow2`, `epinowcast`, `epidist`, ...
-* Also implemented in other packages? Julia? Python?
+Focus here on implementation in Stan [@carpenter2017stan]
+
+* Stan also has Laplace, ADVI, and HMC
+* CFA related work using Stan includes `EpiNow2`, `epinowcast`, `epidist`
+
+::: {.callout-note}
+Also implemented in other packages (presumably).
+Julia?
+Python?
+Others better placed to speak to this than me!
+:::
 
 ## Stan set-up
 
@@ -66,28 +78,23 @@ $$
 
 * Generate draws from $\theta^{(m)} \sim \mathcal{N}(\theta \, | \, \mu, \Sigma)$ for $m = 1, \ldots, M$
 * Use the draws to compute any relevant quantities (after transforming them back to constrained scale)
-  * Also some mention of doing importance sampling here as a detail
-* Key thing is that for "machine learners" VI is typically used more to generate $\hat \theta$
+  * Mention of also doing importance sampling here
+* For "machine learners" VI is typically used to generate $\hat \theta$
 
-##
+## Note on design for initialising MCMC
 
-Good point about initialising MCMC: 
-Prefer to be concentrated within the target rather than outside support.
-HMC runs slower far outside the support.
-"Stiff".
-Hence: goal of pathfinder is to avoid this problem.
-Brings up: to what extent do goals of "inference" differ from goals of "initialise".
-Seems to be a suprise if they are exactly the same.
+* Prefer to be concentrated within the target rather than outside support
+  * HMC runs slower far outside the support: "stiff"
+* Goal of pathfinder is to avoid this problem
 
-## Pathfinder motivation
+::: {.callout-note}
+How do goals of "inference" differ from goals of "initialisation"?
+Coincidence (requiring justification) if they are exactly the same!
+:::
 
-* Samples are usually far from the MAP (more so in high dimensions)
-* Want to take a draw which has around expected log density
+## Pathfinder motivation (1)
 
-```{r}
-library(ggplot2)
-library(purrr)
-
+```{r fig.cap = "Samples are usually far from the MAP (more so in high dimensions)!"}
 df <- purrr::map_df(2^{0:8}, function(x) {
   samps <- sqrt(rchisq(n = 1000, df = x))
   quans <- quantile(samps, c(0.025, 0.5, 0.975))
@@ -95,22 +102,81 @@ df <- purrr::map_df(2^{0:8}, function(x) {
 })
 
 ggplot(df, aes(x = dof, y = `50%`)) +
-  geom_ribbon(aes(ymin = `2.5%`, ymax = `97.5%`), fill = "grey") +
-  geom_line() +
+  geom_ribbon(aes(ymin = `2.5%`, ymax = `97.5%`), fill = "#FFE7B1") +
+  geom_line(color = pal[3]) +
   theme_minimal() +
-  labs(x = "Dimension", y = "Euclidean distance from origin of sample from Gaussian")
+  labs(x = "Dimension", y = "Euclidean distance from mode of sample from MVN")
+```
+##
+
+```{r}
+library(ggplot2)
+dim <- 2
+
+lp_histogram <- function(dim) {
+  samps <- MASS::mvrnorm(n = 1000, mu = rep(0, times = dim), Sigma = diag(nrow = dim, ncol = dim))
+  lp <- apply(dnorm(samps, log = TRUE), 1, sum)
+  text <- paste0("Draws from a MVN in ", dim, " dimensions") 
+  ggplot(data = data.frame("lp" = lp) , aes(x = lp, after_stat(density))) +
+    geom_histogram(fill = pal[2], alpha = 0.7) +
+    theme_minimal() +
+    labs(x = "Log probability", y = "Density", title = text)
+}
+
+lp_histogram(4)
 ```
 
 ##
 
-## When to use approximate methods?
+```{r}
+lp_histogram(16)
+```
 
-![What do we think?](converge.png)
+## Pathfinder motivation (2)
+
+* Want to take a draw (and or initialise) at around expected log density
+* Intermediate value theorem: iterative optimisation algorithm path passes from the tail, through the typical set, and to the mode
+* Find a way to do the optimisation, and try to figure out if we're in the typical set at each point
+
+## First try from Bob
+
+* Try to run MCMC chains along each point along optimisation trajectory
+  * If log density is increasing $\implies$ in the tail
+  * If log density is going up and down $\implies$ in the typical set
+  * If log density is decreasing $\implies$ near the mode
+* Don't understand what this is aiming to do exactly but suggested it didn't work due to all the issues with MCMC
+
+## Second try from Lu
+
+* Estimate a hyper-elliptical surface containing 90% of the probability mass
+  * Get volume using Laplace approximation
+  * Choose points whose density times approximate volume is high
+* I think in 2D this would be a band. As you move to higher dimensions it'd need to be less wide a band (?)
+
+## Third try from Lu and Aki (Pathfinder!)
+
+* Run optimiser first (L-BFGS, quasi-Newton)
+* Gaussian approximation at each point on the trajectory (using calculations from L-BFGS)
+* Sample from the Gaussian approximation with the lowest KL divergence to the posterior 
 
 ##
 
-* Comments about this ^
-* Correlated posteriors sample slowly. But perhaps likely to be poorly estimated by VI
+![This is a simple example that you don't really need Pathfinder for. A Laplace approximation would do.](fig1.png)
+
+##
+
+![For the funnel example it becomes clearer why Pathfinder might be a good idea. Iteration 6 is better than iteration 13, say. Definitely as an initialisation.](fig2.png)
+
+##
+
+![When is the right time to use approximate methods, and when is the right time to redesign the model?](converge.png)
+
+## Some of my thoughts
+
+* Sometimes it could just be that computation is expensive but the posterior is simple
+  * Tall data
+* Correlated posteriors sample slowly
+  * But perhaps likely to be poorly estimated by VI and Laplace methods too...
 
 ## Comparison for `epidist`
 

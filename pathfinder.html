@@ -409,17 +409,24 @@ Adam Howes
 </section>
 <section id="implementation" class="slide level2">
 <h2>Implementation</h2>
+<p>Focus here on implementation in Stan <span class="citation" data-cites="carpenter2017stan">(<a href="#/bibliography" role="doc-biblioref" onclick="">Carpenter et al. 2017</a>)</span></p>
 <ul>
-<li>Implemented in Stan <span class="citation" data-cites="carpenter2017stan">(<a href="#/bibliography" role="doc-biblioref" onclick="">Carpenter et al. 2017</a>)</span>
-<ul>
-<li>Stan also has Laplace, ADVI, HMC</li>
-</ul></li>
-<li>So can operate to generate initial values for (or stand in for) HMC in existing packages which depend on Stan
-<ul>
-<li><code>EpiNow2</code>, <code>epinowcast</code>, <code>epidist</code>, …</li>
-</ul></li>
-<li>Also implemented in other packages? Julia? Python?</li>
+<li>Stan also has Laplace, ADVI, and HMC</li>
+<li>CFA related work using Stan includes <code>EpiNow2</code>, <code>epinowcast</code>, <code>epidist</code></li>
 </ul>
+<div class="callout callout-note callout-titled callout-style-default">
+<div class="callout-body">
+<div class="callout-title">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<p><strong>Note</strong></p>
+</div>
+<div class="callout-content">
+<p>Also implemented in other packages (presumably). Julia? Python? Others better placed to speak to this than me!</p>
+</div>
+</div>
+</div>
 </section>
 <section id="stan-set-up" class="slide level2">
 <h2>Stan set-up</h2>
@@ -452,35 +459,108 @@ Adam Howes
 <li>Generate draws from <span class="math inline">\(\theta^{(m)} \sim \mathcal{N}(\theta \, | \, \mu, \Sigma)\)</span> for <span class="math inline">\(m = 1, \ldots, M\)</span></li>
 <li>Use the draws to compute any relevant quantities (after transforming them back to constrained scale)
 <ul>
-<li>Also some mention of doing importance sampling here as a detail</li>
+<li>Mention of also doing importance sampling here</li>
 </ul></li>
-<li>Key thing is that for “machine learners” VI is typically used more to generate <span class="math inline">\(\hat \theta\)</span></li>
+<li>For “machine learners” VI is typically used to generate <span class="math inline">\(\hat \theta\)</span></li>
 </ul>
 </section>
+<section id="note-on-design-for-initialising-mcmc" class="slide level2">
+<h2>Note on design for initialising MCMC</h2>
+<ul>
+<li>Prefer to be concentrated within the target rather than outside support
+<ul>
+<li>HMC runs slower far outside the support: “stiff”</li>
+</ul></li>
+<li>Goal of pathfinder is to avoid this problem</li>
+</ul>
+<div class="callout callout-note callout-titled callout-style-default">
+<div class="callout-body">
+<div class="callout-title">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<p><strong>Note</strong></p>
+</div>
+<div class="callout-content">
+<p>How do goals of “inference” differ from goals of “initialisation”? Coincidence (requiring justification) if they are exactly the same!</p>
+</div>
+</div>
+</div>
+</section>
+<section id="pathfinder-motivation-1" class="slide level2">
+<h2>Pathfinder motivation (1)</h2>
+
+<img data-src="pathfinder_files/figure-revealjs/unnamed-chunk-2-1.png" width="960" class="r-stretch quarto-figure-center"><p class="caption">Samples are usually far from the MAP (more so in high dimensions)!</p></section>
 <section id="section" class="slide level2">
 <h2></h2>
-<p>Good point about initialising MCMC: Prefer to be concentrated within the target rather than outside support. HMC runs slower far outside the support. “Stiff”. Hence: goal of pathfinder is to avoid this problem. Brings up: to what extent do goals of “inference” differ from goals of “initialise”. Seems to be a suprise if they are exactly the same.</p>
-</section>
-<section id="pathfinder-motivation" class="slide level2">
-<h2>Pathfinder motivation</h2>
-<ul>
-<li>Samples are usually far from the MAP (more so in high dimensions)</li>
-<li>Want to take a draw which has around expected log density</li>
-</ul>
 
-<img data-src="pathfinder_files/figure-revealjs/unnamed-chunk-1-1.png" width="960" class="r-stretch"></section>
+<img data-src="pathfinder_files/figure-revealjs/unnamed-chunk-3-1.png" width="960" class="r-stretch"></section>
 <section id="section-1" class="slide level2">
 <h2></h2>
-</section>
-<section id="when-to-use-approximate-methods" class="slide level2">
-<h2>When to use approximate methods?</h2>
 
-<img data-src="converge.png" class="r-stretch quarto-figure-center"><p class="caption">What do we think?</p></section>
+<img data-src="pathfinder_files/figure-revealjs/unnamed-chunk-4-1.png" width="960" class="r-stretch"></section>
+<section id="pathfinder-motivation-2" class="slide level2">
+<h2>Pathfinder motivation (2)</h2>
+<ul>
+<li>Want to take a draw (and or initialise) at around expected log density</li>
+<li>Intermediate value theorem: iterative optimisation algorithm path passes from the tail, through the typical set, and to the mode</li>
+<li>Find a way to do the optimisation, and try to figure out if we’re in the typical set at each point</li>
+</ul>
+</section>
+<section id="first-try-from-bob" class="slide level2">
+<h2>First try from Bob</h2>
+<ul>
+<li>Try to run MCMC chains along each point along optimisation trajectory
+<ul>
+<li>If log density is increasing <span class="math inline">\(\implies\)</span> in the tail</li>
+<li>If log density is going up and down <span class="math inline">\(\implies\)</span> in the typical set</li>
+<li>If log density is decreasing <span class="math inline">\(\implies\)</span> near the mode</li>
+</ul></li>
+<li>Don’t understand what this is aiming to do exactly but suggested it didn’t work due to all the issues with MCMC</li>
+</ul>
+</section>
+<section id="second-try-from-lu" class="slide level2">
+<h2>Second try from Lu</h2>
+<ul>
+<li>Estimate a hyper-elliptical surface containing 90% of the probability mass
+<ul>
+<li>Get volume using Laplace approximation</li>
+<li>Choose points whose density times approximate volume is high</li>
+</ul></li>
+<li>I think in 2D this would be a band. As you move to higher dimensions it’d need to be less wide a band (?)</li>
+</ul>
+</section>
+<section id="third-try-from-lu-and-aki-pathfinder" class="slide level2">
+<h2>Third try from Lu and Aki (Pathfinder!)</h2>
+<ul>
+<li>Run optimiser first (L-BFGS, quasi-Newton)</li>
+<li>Gaussian approximation at each point on the trajectory (using calculations from L-BFGS)</li>
+<li>Sample from the Gaussian approximation with the lowest KL divergence to the posterior</li>
+</ul>
+</section>
 <section id="section-2" class="slide level2">
 <h2></h2>
+
+<img data-src="fig1.png" class="r-stretch quarto-figure-center"><p class="caption">This is a simple example that you don’t really need Pathfinder for. A Laplace approximation would do.</p></section>
+<section id="section-3" class="slide level2">
+<h2></h2>
+
+<img data-src="fig2.png" class="r-stretch quarto-figure-center"><p class="caption">For the funnel example it becomes clearer why Pathfinder might be a good idea. Iteration 6 is better than iteration 13, say. Definitely as an initialisation.</p></section>
+<section id="section-4" class="slide level2">
+<h2></h2>
+
+<img data-src="converge.png" class="r-stretch quarto-figure-center"><p class="caption">When is the right time to use approximate methods, and when is the right time to redesign the model?</p></section>
+<section id="some-of-my-thoughts" class="slide level2">
+<h2>Some of my thoughts</h2>
 <ul>
-<li>Comments about this ^</li>
-<li>Correlated posteriors sample slowly. But perhaps likely to be poorly estimated by VI</li>
+<li>Sometimes it could just be that computation is expensive but the posterior is simple
+<ul>
+<li>Tall data</li>
+</ul></li>
+<li>Correlated posteriors sample slowly
+<ul>
+<li>But perhaps likely to be poorly estimated by VI and Laplace methods too…</li>
+</ul></li>
 </ul>
 </section>
 <section id="comparison-for-epidist" class="slide level2">
