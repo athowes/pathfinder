@@ -62,6 +62,11 @@ Others better placed to speak to this than me!
 * Use automatic differentiation to compute $\nabla_\theta \log p(\theta \, | \, y)$
   * Stan's AD is optimised for CPUs rather than GPUs
 
+## Hamiltonian Monte Carlo
+
+* What is HMC
+* What are the phases
+
 ## Black box VI
 
 * VI is faster than MCMC because it swaps sampling for optimisation
@@ -110,9 +115,6 @@ ggplot(df, aes(x = dof, y = `50%`)) +
 ##
 
 ```{r}
-library(ggplot2)
-dim <- 2
-
 lp_histogram <- function(dim) {
   samps <- MASS::mvrnorm(n = 1000, mu = rep(0, times = dim), Sigma = diag(nrow = dim, ncol = dim))
   lp <- apply(dnorm(samps, log = TRUE), 1, sum)
@@ -166,6 +168,55 @@ lp_histogram(16)
 ##
 
 ![For the funnel example it becomes clearer why Pathfinder might be a good idea. Iteration 6 is better than iteration 13, say. Definitely as an initialisation.](fig2.png)
+
+##
+
+* After running optimisation, computation at each point can be done in parallel
+* Why not mixture of Gaussians? Yes it's in the paper but not all the way there yet. Seems related to INLA
+* Pathfinder is like early-stopping VI but with 1) automated stopping 2) additional entropy and mode avoidance
+* Uses covariances from L-BFGS row-rank plus diagonal inverse Hessian approximation
+* KL-divergence evaluated using Monte Carlo
+* Stan uses 75 HMC iterations for phase I warmup
+  * Sufficient for most problems but can be very expensive
+
+## Evaluation using `posteriordb`
+
+* Around 50 models in `posteriordb` with 10,000 reference draws (thinned HMC) [@Magnusson_posteriordb_a_set_2023]
+  * Not carefully parameterised for HMC
+
+##
+
+![Uses 1-2 orders of magnitude less log density evaluations than other methods. Similar story for gradients. "This is the bottleneck". What about for other parts of the algorithm e.g. KL evaluations, sample generation? "It's embarrasingly parallel"](fig5a.png)
+
+## Evaluating if it works
+
+* Wanted to avoid using KL-divergence (as this is in the design of the algorithm)
+  * Use Wasserstein-1 distance
+
+##
+
+![](fig3.png)
+
+## Multi-pathfinder
+
+* Issues
+  * L-BFGS getting stuck
+  * Posterior not being Gaussian
+* Partial solution run Pathfinder >1 times (multi-Pathfinder)
+  * Now you have samples from an (equal weighted?) mixture of Gaussians (with low-rank plus diagonal covariance)
+  * Importance resample the draws with Pareto smoothing (PSIS I imagine)
+
+##
+
+!["Mostly a bit better but sometimes much better."](fig4.png)
+
+## Summary of why Pathfinder works
+
+* quasi-Newton optimisation on the log-posterior is faster and more stable than SGD on the ELBO (what ADVI does)
+* low-rank plus diagonal covariance from L-BFGS is better than diagonal but not as costly or difficult to estimate as full rank
+* Evaluation of the ELBO is parallel
+* Multi-Pathfinder has a mixture of Gaussians, which is better than a single one
+* Minor nodes can be pruned and draws polished with PSIS
 
 ##
 
