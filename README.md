@@ -2,7 +2,7 @@
 
 Discussion of the Pathfinder method for Bayesian inference for a  [CDC CFA](https://www.cdc.gov/forecast-outbreak-analytics/index.html) short-term forecasting lab meeting.
 
-Slides available [here](athowes.github.io/pathfinder/pathfinder).
+Slides available [here](https://athowes.github.io/pathfinder/pathfinder).
 
 ## Resources
 
