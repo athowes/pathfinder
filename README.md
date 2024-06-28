@@ -9,3 +9,4 @@ Discussion of the Pathfinder method for Bayesian inference for a  [CDC CFA](http
 * [HMC fails when you initalize at the mode](https://statmodeling.stat.columbia.edu/2024/05/24/hmc-fails-when-you-initialize-at-the-mode/)
 * [#90, Demystifying MCMC & Variational Inference, with Charles Margossian](https://www.youtube.com/watch?v=wEKqznbHHQw&t=10s)
 * [Approximate inference vignette in `epidist`](https://github.com/epinowcast/epidist/pull/69) (a work in progress)
+* [Using Pathfinder or other method to set initial values for sampling](https://discourse.mc-stan.org/t/using-pathfinder-or-other-method-to-set-initial-values-for-sampling/34960?page=2): a user documenting similar issues to those that I'm having using Pathfinder
