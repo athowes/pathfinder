@@ -2,6 +2,8 @@
 
 Discussion of the Pathfinder method for Bayesian inference for a  [CDC CFA](https://www.cdc.gov/forecast-outbreak-analytics/index.html) short-term forecasting lab meeting.
 
+Slides available [here](athowes.github.io/pathfinder/pathfinder).
+
 ## Resources
 
 * [Pathfinder: Parallel quasi-Newton variational inference](https://www.jmlr.org/papers/volume23/21-0889/21-0889.pdf) by Zhang, Carpenter, Gelman, and Vehtari
