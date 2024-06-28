@@ -25,21 +25,22 @@ pal <- c("#56B4E9", "#009E73", "#E69F00")
 * For complex models or large data, MCMC and HMC can be impractical (not scalable)
   * Even if we are to use MCMC and HMC, they require good initialisation values (burn-in)
 
-## Example applications
+## My interest
 
-* As to why I am interested in this
-  * Estimating the effective reproductive number $R_t$ across US states each week
-  * Estimating epidemiological delays with line list data
-* Others are using Pathfinder for e.g. forecasting
+* Both to improve initialisation and to act as drop in replacement
+* Estimating the effective reproductive number $R_t$ across US states each week
+  * NNH team has some $R_t$ fits which display convergence problems
+  * Interested in extensions of the model to be more complex and use more data
+* Estimating epidemiological delays with line list data
 
 ## Features of pathfinder
 
-* Claimed "state-of-the-art" method for
+* Claim to be "state-of-the-art" for
 1. Black box VI
 2. MCMC burn-in (I assume this means initialisation)
-* Fast (-er than ADVI and HMC) and (almost embarrassingly) parallelisable
+* Faster than ADVI and HMC (phase I) and (almost embarrassingly) parallelisable
 * Robust to "varying curvature, minor multimodality, avoiding variance and non-convergence of SGD"
-* A little more accurate (than? I'd guess ADVI)
+* A little more accurate (than ADVI and HMC [phase I])
 
 ## Implementation
 
@@ -64,9 +65,17 @@ Others better placed to speak to this than me!
 
 ## Hamiltonian Monte Carlo
 
-* What is HMC
-* What are the phases
+* HMC (usual Stan MCMC algorithm) has hyperparameters like discretisation time $\epsilon$, metric $M$ and steps taken $L$ tuned during warm-up
+* Warm-up has three phases
+  * Phase I `init_buffer = 75`: Aims to "find the typical set". Tune the step-size
+  * Phase II `window = 50` (doubling): Tune the metric
+  * Phase III `term_buffer = 25`: Re-tune the step-size (given metric)
+* And then afterwards there is the sampling phase
 
+##
+
+![Warm-up phases from the Stan manual.](phases.png)
+  
 ## Black box VI
 
 * VI is faster than MCMC because it swaps sampling for optimisation
@@ -88,9 +97,7 @@ $$
 
 ## Note on design for initialising MCMC
 
-* Prefer to be concentrated within the target rather than outside support
-  * HMC runs slower far outside the support: "stiff"
-* Goal of pathfinder is to avoid this problem
+![This illustrates potential issue with e.g. mean-field VI. For initialisation, we prefer to be concentrated within the target rather than outside support.](bishop.png)
 
 ::: {.callout-note}
 How do goals of "inference" differ from goals of "initialisation"?
@@ -158,6 +165,7 @@ lp_histogram(16)
 ## Third try from Lu and Aki (Pathfinder!)
 
 * Run optimiser first (L-BFGS, quasi-Newton)
+  * (quasi means that the Hessian is not directly available)
 * Gaussian approximation at each point on the trajectory (using calculations from L-BFGS)
 * Sample from the Gaussian approximation with the lowest KL divergence to the posterior 
 
@@ -169,15 +177,12 @@ lp_histogram(16)
 
 ![For the funnel example it becomes clearer why Pathfinder might be a good idea. Iteration 6 is better than iteration 13, say. Definitely as an initialisation.](fig2.png)
 
-##
+## Some notes
 
 * After running optimisation, computation at each point can be done in parallel
-* Why not mixture of Gaussians? Yes it's in the paper but not all the way there yet. Seems related to INLA
+  * KL-divergence evaluated using Monte Carlo
 * Pathfinder is like early-stopping VI but with 1) automated stopping 2) additional entropy and mode avoidance
-* Uses covariances from L-BFGS row-rank plus diagonal inverse Hessian approximation
-* KL-divergence evaluated using Monte Carlo
-* Stan uses 75 HMC iterations for phase I warmup
-  * Sufficient for most problems but can be very expensive
+* Uses covariances from L-BFGS row-rank plus diagonal inverse Hessian approximation -- so in some sense I think these are precomputed as a part of the optimisation algorithm
 
 ## Evaluation using `posteriordb`
 
@@ -190,8 +195,9 @@ lp_histogram(16)
 
 ## Evaluating if it works
 
-* Wanted to avoid using KL-divergence (as this is in the design of the algorithm)
-  * Use Wasserstein-1 distance
+* Measure distance from approximate posterior draws to gold-standard reference draws
+* Wanted to avoid using KL-divergence for evaluation (as this is in the design of the algorithm)
+  * Use Wasserstein-1 distance from optimal transport
 
 ##
 
@@ -204,7 +210,7 @@ lp_histogram(16)
   * Posterior not being Gaussian
 * Partial solution run Pathfinder >1 times (multi-Pathfinder)
   * Now you have samples from an (equal weighted?) mixture of Gaussians (with low-rank plus diagonal covariance)
-  * Importance resample the draws with Pareto smoothing (PSIS I imagine)
+  * Importance resample the draws with Pareto smoothing (PSIS I imagine) (perhaps always do this, even for single Pathfinder?)
 
 ##
 
@@ -224,13 +230,17 @@ lp_histogram(16)
 
 ## Some of my thoughts
 
-* Sometimes it could just be that computation is expensive but the posterior is simple
-  * Tall data
-* Correlated posteriors sample slowly
-  * But perhaps likely to be poorly estimated by VI and Laplace methods too...
+* Sometimes it could just be that computation is expensive but the posterior is simple e.g. big data
+* Correlated posteriors sample slowly e.g. complex models
+  * Perhaps likely to be poorly estimated by simple VI and Laplace methods
+  * Hope for some intermediate here? e.g. multi-Pathfinder
+* Maybe practically possible to parameterise all of our models as expert HMC users? Or for all of our packaged models to have users generate expert HMC parameterisations
+  * In this case would we prefer to have forgiving algorithms (e.g. avoid funnel problem)
+  * How robust to posterior misspecification to be? Any problem should be fixed at model level? What if OK to fix at inference level?
 
 ## Comparison for `epidist`
 
 * I've been working on a vignette for `epidist` demonstrating Laplace, ADVI, Pathfinder, and HMC
+* If time, I'll screenshare where I am with this
 
 ## Bibliography

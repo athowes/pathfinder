@@ -381,30 +381,31 @@ Adam Howes
 </ul></li>
 </ul>
 </section>
-<section id="example-applications" class="slide level2">
-<h2>Example applications</h2>
+<section id="my-interest" class="slide level2">
+<h2>My interest</h2>
 <ul>
-<li>As to why I am interested in this
+<li>Both to improve initialisation and to act as drop in replacement</li>
+<li>Estimating the effective reproductive number <span class="math inline">\(R_t\)</span> across US states each week
 <ul>
-<li>Estimating the effective reproductive number <span class="math inline">\(R_t\)</span> across US states each week</li>
-<li>Estimating epidemiological delays with line list data</li>
+<li>NNH team has some <span class="math inline">\(R_t\)</span> fits which display convergence problems</li>
+<li>Interested in extensions of the model to be more complex and use more data</li>
 </ul></li>
-<li>Others are using Pathfinder for e.g.&nbsp;forecasting</li>
+<li>Estimating epidemiological delays with line list data</li>
 </ul>
 </section>
 <section id="features-of-pathfinder" class="slide level2">
 <h2>Features of pathfinder</h2>
 <ul>
-<li>Claimed “state-of-the-art” method for</li>
+<li>Claim to be “state-of-the-art” for</li>
 </ul>
 <ol type="1">
 <li>Black box VI</li>
 <li>MCMC burn-in (I assume this means initialisation)</li>
 </ol>
 <ul>
-<li>Fast (-er than ADVI and HMC) and (almost embarrassingly) parallelisable</li>
+<li>Faster than ADVI and HMC (phase I) and (almost embarrassingly) parallelisable</li>
 <li>Robust to “varying curvature, minor multimodality, avoiding variance and non-convergence of SGD”</li>
-<li>A little more accurate (than? I’d guess ADVI)</li>
+<li>A little more accurate (than ADVI and HMC [phase I])</li>
 </ul>
 </section>
 <section id="implementation" class="slide level2">
@@ -442,10 +443,20 @@ Adam Howes
 <section id="hamiltonian-monte-carlo" class="slide level2">
 <h2>Hamiltonian Monte Carlo</h2>
 <ul>
-<li>What is HMC</li>
-<li>What are the phases</li>
+<li>HMC (usual Stan MCMC algorithm) has hyperparameters like discretisation time <span class="math inline">\(\epsilon\)</span>, metric <span class="math inline">\(M\)</span> and steps taken <span class="math inline">\(L\)</span> tuned during warm-up</li>
+<li>Warm-up has three phases
+<ul>
+<li>Phase I <code>init_buffer = 75</code>: Aims to “find the typical set”. Tune the step-size</li>
+<li>Phase II <code>window = 50</code> (doubling): Tune the metric</li>
+<li>Phase III <code>term_buffer = 25</code>: Re-tune the step-size (given metric)</li>
+</ul></li>
+<li>And then afterwards there is the sampling phase</li>
 </ul>
 </section>
+<section id="section" class="slide level2">
+<h2></h2>
+
+<img data-src="phases.png" class="r-stretch quarto-figure-center"><p class="caption">Warm-up phases from the Stan manual.</p></section>
 <section id="black-box-vi" class="slide level2">
 <h2>Black box VI</h2>
 <ul>
@@ -473,14 +484,8 @@ Adam Howes
 </section>
 <section id="note-on-design-for-initialising-mcmc" class="slide level2">
 <h2>Note on design for initialising MCMC</h2>
-<ul>
-<li>Prefer to be concentrated within the target rather than outside support
-<ul>
-<li>HMC runs slower far outside the support: “stiff”</li>
-</ul></li>
-<li>Goal of pathfinder is to avoid this problem</li>
-</ul>
-<div class="callout callout-note callout-titled callout-style-default">
+
+<img data-src="bishop.png" class="r-stretch quarto-figure-center"><p class="caption">This illustrates potential issue with e.g.&nbsp;mean-field VI. For initialisation, we prefer to be concentrated within the target rather than outside support.</p><div class="callout callout-note callout-titled callout-style-default">
 <div class="callout-body">
 <div class="callout-title">
 <div class="callout-icon-container">
@@ -498,11 +503,11 @@ Adam Howes
 <h2>Pathfinder motivation (1)</h2>
 
 <img data-src="pathfinder_files/figure-revealjs/unnamed-chunk-2-1.png" width="960" class="r-stretch quarto-figure-center"><p class="caption">Samples are usually far from the MAP (more so in high dimensions)!</p></section>
-<section id="section" class="slide level2">
+<section id="section-1" class="slide level2">
 <h2></h2>
 
 <img data-src="pathfinder_files/figure-revealjs/unnamed-chunk-3-1.png" width="960" class="r-stretch"></section>
-<section id="section-1" class="slide level2">
+<section id="section-2" class="slide level2">
 <h2></h2>
 
 <img data-src="pathfinder_files/figure-revealjs/unnamed-chunk-4-1.png" width="960" class="r-stretch"></section>
@@ -540,31 +545,31 @@ Adam Howes
 <section id="third-try-from-lu-and-aki-pathfinder" class="slide level2">
 <h2>Third try from Lu and Aki (Pathfinder!)</h2>
 <ul>
-<li>Run optimiser first (L-BFGS, quasi-Newton)</li>
+<li>Run optimiser first (L-BFGS, quasi-Newton)
+<ul>
+<li>(quasi means that the Hessian is not directly available)</li>
+</ul></li>
 <li>Gaussian approximation at each point on the trajectory (using calculations from L-BFGS)</li>
 <li>Sample from the Gaussian approximation with the lowest KL divergence to the posterior</li>
 </ul>
 </section>
-<section id="section-2" class="slide level2">
-<h2></h2>
-
-<img data-src="fig1.png" class="r-stretch quarto-figure-center"><p class="caption">This is a simple example that you don’t really need Pathfinder for. A Laplace approximation would do.</p></section>
 <section id="section-3" class="slide level2">
 <h2></h2>
 
-<img data-src="fig2.png" class="r-stretch quarto-figure-center"><p class="caption">For the funnel example it becomes clearer why Pathfinder might be a good idea. Iteration 6 is better than iteration 13, say. Definitely as an initialisation.</p></section>
+<img data-src="fig1.png" class="r-stretch quarto-figure-center"><p class="caption">This is a simple example that you don’t really need Pathfinder for. A Laplace approximation would do.</p></section>
 <section id="section-4" class="slide level2">
 <h2></h2>
+
+<img data-src="fig2.png" class="r-stretch quarto-figure-center"><p class="caption">For the funnel example it becomes clearer why Pathfinder might be a good idea. Iteration 6 is better than iteration 13, say. Definitely as an initialisation.</p></section>
+<section id="some-notes" class="slide level2">
+<h2>Some notes</h2>
 <ul>
-<li>After running optimisation, computation at each point can be done in parallel</li>
-<li>Why not mixture of Gaussians? Yes it’s in the paper but not all the way there yet. Seems related to INLA</li>
-<li>Pathfinder is like early-stopping VI but with 1) automated stopping 2) additional entropy and mode avoidance</li>
-<li>Uses covariances from L-BFGS row-rank plus diagonal inverse Hessian approximation</li>
+<li>After running optimisation, computation at each point can be done in parallel
+<ul>
 <li>KL-divergence evaluated using Monte Carlo</li>
-<li>Stan uses 75 HMC iterations for phase I warmup
-<ul>
-<li>Sufficient for most problems but can be very expensive</li>
 </ul></li>
+<li>Pathfinder is like early-stopping VI but with 1) automated stopping 2) additional entropy and mode avoidance</li>
+<li>Uses covariances from L-BFGS row-rank plus diagonal inverse Hessian approximation – so in some sense I think these are precomputed as a part of the optimisation algorithm</li>
 </ul>
 </section>
 <section id="evaluation-using-posteriordb" class="slide level2">
@@ -583,9 +588,10 @@ Adam Howes
 <section id="evaluating-if-it-works" class="slide level2">
 <h2>Evaluating if it works</h2>
 <ul>
-<li>Wanted to avoid using KL-divergence (as this is in the design of the algorithm)
+<li>Measure distance from approximate posterior draws to gold-standard reference draws</li>
+<li>Wanted to avoid using KL-divergence for evaluation (as this is in the design of the algorithm)
 <ul>
-<li>Use Wasserstein-1 distance</li>
+<li>Use Wasserstein-1 distance from optimal transport</li>
 </ul></li>
 </ul>
 </section>
@@ -604,7 +610,7 @@ Adam Howes
 <li>Partial solution run Pathfinder &gt;1 times (multi-Pathfinder)
 <ul>
 <li>Now you have samples from an (equal weighted?) mixture of Gaussians (with low-rank plus diagonal covariance)</li>
-<li>Importance resample the draws with Pareto smoothing (PSIS I imagine)</li>
+<li>Importance resample the draws with Pareto smoothing (PSIS I imagine) (perhaps always do this, even for single Pathfinder?)</li>
 </ul></li>
 </ul>
 </section>
@@ -629,13 +635,16 @@ Adam Howes
 <section id="some-of-my-thoughts" class="slide level2">
 <h2>Some of my thoughts</h2>
 <ul>
-<li>Sometimes it could just be that computation is expensive but the posterior is simple
+<li>Sometimes it could just be that computation is expensive but the posterior is simple e.g.&nbsp;big data</li>
+<li>Correlated posteriors sample slowly e.g.&nbsp;complex models
 <ul>
-<li>Tall data</li>
+<li>Perhaps likely to be poorly estimated by simple VI and Laplace methods</li>
+<li>Hope for some intermediate here? e.g.&nbsp;multi-Pathfinder</li>
 </ul></li>
-<li>Correlated posteriors sample slowly
+<li>Maybe practically possible to parameterise all of our models as expert HMC users? Or for all of our packaged models to have users generate expert HMC parameterisations
 <ul>
-<li>But perhaps likely to be poorly estimated by VI and Laplace methods too…</li>
+<li>In this case would we prefer to have forgiving algorithms (e.g.&nbsp;avoid funnel problem)</li>
+<li>How robust to posterior misspecification to be? Any problem should be fixed at model level? What if OK to fix at inference level?</li>
 </ul></li>
 </ul>
 </section>
@@ -643,6 +652,7 @@ Adam Howes
 <h2>Comparison for <code>epidist</code></h2>
 <ul>
 <li>I’ve been working on a vignette for <code>epidist</code> demonstrating Laplace, ADVI, Pathfinder, and HMC</li>
+<li>If time, I’ll screenshare where I am with this</li>
 </ul>
 </section>
 <section id="bibliography" class="slide level2 smaller scrollable">
