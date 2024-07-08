@@ -74,7 +74,7 @@ Others better placed to speak to this than me!
 
 ##
 
-![Warm-up phases from the Stan manual.](phases.png)
+![Warm-up phases from the Stan manual.](images/phases.png)
   
 ## Black box VI
 
@@ -97,7 +97,7 @@ $$
 
 ## Note on design for initialising MCMC
 
-![This illustrates potential issue with e.g. mean-field VI. For initialisation, we prefer to be concentrated within the target rather than outside support.](bishop.png)
+![This illustrates potential issue with e.g. mean-field VI. For initialisation, we prefer to be concentrated within the target rather than outside support.](images/bishop.png)
 
 ::: {.callout-note}
 How do goals of "inference" differ from goals of "initialisation"?
@@ -171,11 +171,11 @@ lp_histogram(16)
 
 ##
 
-![This is a simple example that you don't really need Pathfinder for. A Laplace approximation would do.](fig1.png)
+![This is a simple example that you don't really need Pathfinder for. A Laplace approximation would do.](images/fig1.png)
 
 ##
 
-![For the funnel example it becomes clearer why Pathfinder might be a good idea. Iteration 6 is better than iteration 13, say. Definitely as an initialisation.](fig2.png)
+![For the funnel example it becomes clearer why Pathfinder might be a good idea. Iteration 6 is better than iteration 13, say. Definitely as an initialisation.](images/fig2.png)
 
 ## Some notes
 
@@ -191,7 +191,7 @@ lp_histogram(16)
 
 ##
 
-![Uses 1-2 orders of magnitude less log density evaluations than other methods. Similar story for gradients. "This is the bottleneck". What about for other parts of the algorithm e.g. KL evaluations, sample generation? "It's embarrasingly parallel"](fig5a.png)
+![Uses 1-2 orders of magnitude less log density evaluations than other methods. Similar story for gradients. "This is the bottleneck". What about for other parts of the algorithm e.g. KL evaluations, sample generation? "It's embarrasingly parallel"](images/fig5a.png)
 
 ## Evaluating if it works
 
@@ -201,7 +201,7 @@ lp_histogram(16)
 
 ##
 
-![](fig3.png)
+![](images/fig3.png)
 
 ## Multi-pathfinder
 
@@ -214,7 +214,7 @@ lp_histogram(16)
 
 ##
 
-!["Mostly a bit better but sometimes much better."](fig4.png)
+!["Mostly a bit better but sometimes much better."](images/fig4.png)
 
 ## Summary of why Pathfinder works
 
@@ -226,16 +226,18 @@ lp_histogram(16)
 
 ##
 
-![When is the right time to use approximate methods, and when is the right time to redesign the model?](converge.png)
+![When is the right time to use approximate methods, and when is the right time to redesign the model?](images/converge.png)
 
 ## Some of my thoughts
 
-* Sometimes it could just be that computation is expensive but the posterior is simple e.g. big data
+* Could have expensive computation with simple posterior e.g. big data
 * Correlated posteriors sample slowly e.g. complex models
-  * Perhaps likely to be poorly estimated by simple VI and Laplace methods
-  * Hope for some intermediate here? e.g. multi-Pathfinder
-* Maybe practically possible to parameterise all of our models as expert HMC users? Or for all of our packaged models to have users generate expert HMC parameterisations
-  * In this case would we prefer to have forgiving algorithms (e.g. avoid funnel problem)
+  * Poorly estimated by simple VI and Laplace methods -- hope for some intermediate here? e.g. multi-Pathfinder
+
+##
+
+* Difficult to parameterise all of our models as expert HMC users? Or all of our user generated models
+  * Prefer to have forgiving algorithms (e.g. avoid funnel problem)
   * How robust to posterior misspecification to be? Any problem should be fixed at model level? What if OK to fix at inference level?
 
 ## Comparison for `epidist`

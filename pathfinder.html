@@ -456,7 +456,7 @@ Adam Howes
 <section id="section" class="slide level2">
 <h2></h2>
 
-<img data-src="phases.png" class="r-stretch quarto-figure-center"><p class="caption">Warm-up phases from the Stan manual.</p></section>
+<img data-src="images/phases.png" class="r-stretch quarto-figure-center"><p class="caption">Warm-up phases from the Stan manual.</p></section>
 <section id="black-box-vi" class="slide level2">
 <h2>Black box VI</h2>
 <ul>
@@ -485,7 +485,7 @@ Adam Howes
 <section id="note-on-design-for-initialising-mcmc" class="slide level2">
 <h2>Note on design for initialising MCMC</h2>
 
-<img data-src="bishop.png" class="r-stretch quarto-figure-center"><p class="caption">This illustrates potential issue with e.g.&nbsp;mean-field VI. For initialisation, we prefer to be concentrated within the target rather than outside support.</p><div class="callout callout-note callout-titled callout-style-default">
+<img data-src="images/bishop.png" class="r-stretch quarto-figure-center"><p class="caption">This illustrates potential issue with e.g.&nbsp;mean-field VI. For initialisation, we prefer to be concentrated within the target rather than outside support.</p><div class="callout callout-note callout-titled callout-style-default">
 <div class="callout-body">
 <div class="callout-title">
 <div class="callout-icon-container">
@@ -556,11 +556,11 @@ Adam Howes
 <section id="section-3" class="slide level2">
 <h2></h2>
 
-<img data-src="fig1.png" class="r-stretch quarto-figure-center"><p class="caption">This is a simple example that you don’t really need Pathfinder for. A Laplace approximation would do.</p></section>
+<img data-src="images/fig1.png" class="r-stretch quarto-figure-center"><p class="caption">This is a simple example that you don’t really need Pathfinder for. A Laplace approximation would do.</p></section>
 <section id="section-4" class="slide level2">
 <h2></h2>
 
-<img data-src="fig2.png" class="r-stretch quarto-figure-center"><p class="caption">For the funnel example it becomes clearer why Pathfinder might be a good idea. Iteration 6 is better than iteration 13, say. Definitely as an initialisation.</p></section>
+<img data-src="images/fig2.png" class="r-stretch quarto-figure-center"><p class="caption">For the funnel example it becomes clearer why Pathfinder might be a good idea. Iteration 6 is better than iteration 13, say. Definitely as an initialisation.</p></section>
 <section id="some-notes" class="slide level2">
 <h2>Some notes</h2>
 <ul>
@@ -584,7 +584,7 @@ Adam Howes
 <section id="section-5" class="slide level2">
 <h2></h2>
 
-<img data-src="fig5a.png" class="r-stretch quarto-figure-center"><p class="caption">Uses 1-2 orders of magnitude less log density evaluations than other methods. Similar story for gradients. “This is the bottleneck”. What about for other parts of the algorithm e.g.&nbsp;KL evaluations, sample generation? “It’s embarrasingly parallel”</p></section>
+<img data-src="images/fig5a.png" class="r-stretch quarto-figure-center"><p class="caption">Uses 1-2 orders of magnitude less log density evaluations than other methods. Similar story for gradients. “This is the bottleneck”. What about for other parts of the algorithm e.g.&nbsp;KL evaluations, sample generation? “It’s embarrasingly parallel”</p></section>
 <section id="evaluating-if-it-works" class="slide level2">
 <h2>Evaluating if it works</h2>
 <ul>
@@ -598,7 +598,7 @@ Adam Howes
 <section id="section-6" class="slide level2">
 <h2></h2>
 
-<img data-src="fig3.png" class="r-stretch"></section>
+<img data-src="images/fig3.png" class="r-stretch"></section>
 <section id="multi-pathfinder" class="slide level2">
 <h2>Multi-pathfinder</h2>
 <ul>
@@ -617,7 +617,7 @@ Adam Howes
 <section id="section-7" class="slide level2">
 <h2></h2>
 
-<img data-src="fig4.png" class="r-stretch quarto-figure-center"><p class="caption">“Mostly a bit better but sometimes much better.”</p></section>
+<img data-src="images/fig4.png" class="r-stretch quarto-figure-center"><p class="caption">“Mostly a bit better but sometimes much better.”</p></section>
 <section id="summary-of-why-pathfinder-works" class="slide level2">
 <h2>Summary of why Pathfinder works</h2>
 <ul>
@@ -631,19 +631,23 @@ Adam Howes
 <section id="section-8" class="slide level2">
 <h2></h2>
 
-<img data-src="converge.png" class="r-stretch quarto-figure-center"><p class="caption">When is the right time to use approximate methods, and when is the right time to redesign the model?</p></section>
+<img data-src="images/converge.png" class="r-stretch quarto-figure-center"><p class="caption">When is the right time to use approximate methods, and when is the right time to redesign the model?</p></section>
 <section id="some-of-my-thoughts" class="slide level2">
 <h2>Some of my thoughts</h2>
 <ul>
-<li>Sometimes it could just be that computation is expensive but the posterior is simple e.g.&nbsp;big data</li>
+<li>Could have expensive computation with simple posterior e.g.&nbsp;big data</li>
 <li>Correlated posteriors sample slowly e.g.&nbsp;complex models
 <ul>
-<li>Perhaps likely to be poorly estimated by simple VI and Laplace methods</li>
-<li>Hope for some intermediate here? e.g.&nbsp;multi-Pathfinder</li>
+<li>Poorly estimated by simple VI and Laplace methods – hope for some intermediate here? e.g.&nbsp;multi-Pathfinder</li>
 </ul></li>
-<li>Maybe practically possible to parameterise all of our models as expert HMC users? Or for all of our packaged models to have users generate expert HMC parameterisations
+</ul>
+</section>
+<section id="section-9" class="slide level2">
+<h2></h2>
 <ul>
-<li>In this case would we prefer to have forgiving algorithms (e.g.&nbsp;avoid funnel problem)</li>
+<li>Difficult to parameterise all of our models as expert HMC users? Or all of our user generated models
+<ul>
+<li>Prefer to have forgiving algorithms (e.g.&nbsp;avoid funnel problem)</li>
 <li>How robust to posterior misspecification to be? Any problem should be fixed at model level? What if OK to fix at inference level?</li>
 </ul></li>
 </ul>
